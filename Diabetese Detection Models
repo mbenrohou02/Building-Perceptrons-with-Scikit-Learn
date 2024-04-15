@@ -1,0 +1,159 @@
+from sklearn.metrics import confusion_matrix, accuracy_score, precision_score, recall_score, f1_score, roc_curve, auc
+from sklearn.linear_model import LogisticRegression, Perceptron
+from sklearn.model_selection import train_test_split
+from sklearn.neural_network import MLPClassifier
+from sklearn.preprocessing import StandardScaler
+
+import matplotlib.pyplot as plt
+import seaborn as sns
+import pandas as pd
+
+df = pd.read_csv("https://raw.githubusercontent.com/mansont/datasets-tests/main/diabetese.csv")
+df.head(10)
+
+# Model 1 : Logistic regression
+
+from re import X
+# Features
+X = df.drop("diabetes", axis=1)
+y = df["diabetes"]
+
+# Train & Test
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+# Logistic regression model
+lr_model = LogisticRegression()
+lr_model.fit(X_train, y_train)
+
+# Prediction
+y_pred = lr_model.predict(X_test)
+
+# Perfo
+accuracy_logistic = accuracy_score(y_test, y_pred)
+print("Accuracy:", accuracy_logistic)
+precision = precision_score(y_test, y_pred)
+print("Precision:", precision)
+recall = recall_score(y_test, y_pred)
+print("Recall:", recall)
+f1 = f1_score(y_test, y_pred)
+print("F1 Score:", f1)
+
+# Confusion Matrix
+cm = confusion_matrix(y_test, y_pred)
+sns.heatmap(cm, annot=True, fmt="d", cmap="Blues")
+plt.xlabel("Predicted Values")
+plt.ylabel("True Values")
+plt.title("Confusion Matrix")
+plt.show()
+
+# ROC Curve
+fpr, tpr, thresholds = roc_curve(y_test, lr_model.predict_proba(X_test)[:,1])
+plt.plot(fpr, tpr, color='blue')
+plt.plot([0, 1], [0, 1], color='red', linestyle='--')
+plt.xlabel('False Positive Rate')
+plt.ylabel('True Positive Rate')
+plt.title('ROC Curve')
+plt.show()
+
+
+# Model 2 : Single-layer perceptron model
+
+# Features and target
+X = df.drop("diabetes", axis=1)
+y = df["diabetes"]
+
+# Train/Test Split
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+# Standardize the features
+sc = StandardScaler()
+sc.fit(X_train)
+X_train_std = sc.transform(X_train)
+X_test_std = sc.transform(X_test)
+
+# Create a perceptron object with a higher maximum number of iterations
+ppn = Perceptron(max_iter=1000, random_state=0)
+
+# Train the perceptron
+ppn.fit(X_train_std, y_train)
+
+# Apply the trained perceptron on the test data to make predictions
+y_pred = ppn.predict(X_test_std)
+
+# Accuracy score of the model
+print('Perceptron accuracy: %.2f' % accuracy_score(y_test, y_pred))
+
+# Confusion Matrix
+cm = confusion_matrix(y_test, y_pred)
+sns.heatmap(cm, annot=True, fmt="d", cmap="Blues")
+plt.xlabel("Predicted Values")
+plt.ylabel("True Values")
+plt.title("Confusion Matrix - Perceptron")
+plt.show()
+
+# ROC Curve
+fpr, tpr, thresholds = roc_curve(y_test, ppn.decision_function(X_test_std))
+roc_auc = auc(fpr, tpr)
+
+plt.figure()
+plt.plot(fpr, tpr, color='blue', lw=2, label='ROC curve (area = %0.2f)' % roc_auc)
+plt.plot([0, 1], [0, 1], color='red', linestyle='--')
+plt.xlim([0.0, 1.0])
+plt.ylim([0.0, 1.05])
+plt.xlabel('False Positive Rate')
+plt.ylabel('True Positive Rate')
+plt.title('ROC Curve - Perceptron')
+plt.legend(loc="lower right")
+plt.show()
+
+
+# Model 3 : Multilayer perceptron
+
+# Create a MultiLayer Perceptron Object
+mlp = MLPClassifier(random_state=0)
+
+# Train the MLP
+mlp.fit(X_train_std, y_train)
+
+# Prediction
+y_pred_mlp = mlp.predict(X_test_std)
+
+# Accuracy score of the model
+print('MLP accuracy: %.2f' % accuracy_score(y_test, y_pred_mlp))
+
+from sklearn.metrics import confusion_matrix, roc_curve, auc
+
+# Confusion Matrix
+cm = confusion_matrix(y_test, y_pred_mlp)
+sns.heatmap(cm, annot=True, fmt="d", cmap="Blues")
+plt.xlabel("Predicted Values")
+plt.ylabel("True Values")
+plt.title("Confusion Matrix - MLP")
+plt.show()
+
+# ROC Curve
+fpr, tpr, thresholds = roc_curve(y_test, mlp.predict_proba(X_test_std)[:,1])
+roc_auc = auc(fpr, tpr)
+
+plt.plot(fpr, tpr, color='blue', lw=2, label='ROC curve (area = %0.2f)' % roc_auc)
+plt.plot([0, 1], [0, 1], color='red', linestyle='--')
+plt.xlabel('False Positive Rate')
+plt.ylabel('True Positive Rate')
+plt.title('ROC Curve - MLP')
+plt.legend(loc="lower right")
+plt.show()
+
+
+# Performance Comparison
+
+# Accuracy scores of the three models
+accuracy_scores = [accuracy_logistic, accuracy_score(y_test, y_pred), accuracy_score(y_test, y_pred_mlp)]
+models = ['Logistic Regression', 'Perceptron', 'MLP']
+
+# Create the bar chart
+plt.bar(models, accuracy_scores, color=['blue', 'green', 'orange'])
+plt.xlabel('Models')
+plt.ylabel('Accuracy Score')
+plt.title('Comparison of Model Performances')
+plt.ylim(0, 1)  # Limiting y-axis between 0 and 1 for better visualization of differences
+plt.show()
